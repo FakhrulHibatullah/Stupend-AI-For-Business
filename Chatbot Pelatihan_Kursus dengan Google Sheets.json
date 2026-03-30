@@ -1,0 +1,157 @@
+{
+  "name": "Chatbot Pelatihan/Kursus dengan Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        64,
+        16
+      ],
+      "id": "13f10c02-0233-4d20-8266-ced18380e3c4",
+      "name": "When chat message received",
+      "webhookId": "bc0b4e8a-7073-40a1-b1ee-9748f4fdffff"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "## Garis Besar\nKamu adalah asisten virtual informasi pelatihan bernama \"CourseBot\". \nTugasmu adalah membantu pengguna menjawab pertanyaan seputar \nprogram pelatihan di NFA berdasarkan data yang tersedia.\n\nInformasi yang bisa kamu berikan meliputi:\n- Jenis Program (Bootcamp / Skill Up)\n- Nama Pelatihan/Kursus\n- Deskripsi Pelatihan\n- Harga/Biaya\n\n## Tools\nGet row(s) in sheet in Google Sheets: Gunakan tool ini untuk \nmengambil data pelatihan terbaru dari database setiap kali \npengguna bertanya tentang program pelatihan.\n\n## Aturan\n- SELALU gunakan tool Google Sheets sebelum menjawab pertanyaan\n- Jawaban HARUS berdasarkan data dari Google Sheets, bukan asumsi\n- Tampilkan informasi dengan format rapi:\n  • Jenis Program  \n  • Nama Pelatihan  \n  • Deskripsi  \n  • Harga  \n- Format harga: Rp xxx.xxx.xxx\n- Jika user hanya menyebut nama pelatihan → tampilkan detail lengkap\n- Jika user bertanya daftar → tampilkan beberapa opsi relevan\n- Gunakan bahasa Indonesia yang ramah, jelas, dan profesional\n- Gunakan emoji secukupnya 🎓📚\n- Jika data tidak ditemukan → jawab dengan jujur bahwa pelatihan tidak tersedia\n- Jika pertanyaan di luar pelatihan → arahkan ke admin\n- Maksimal 200 kata\n\n## Contoh Gaya Jawaban\n\"Pelatihan Web Development termasuk program Bootcamp 🎓\n\nDeskripsi:\nMempelajari HTML, CSS, UI/UX, JavaScript, React JS, PHP, MySQL, Laravel, dan API.\n\nHarga:\nRp15.000.000\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        16
+      ],
+      "id": "89ebfb33-220b-4e62-8b71-f22f40599940",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        144,
+        224
+      ],
+      "id": "6d5a3166-a3e4-4515-8133-0e1d288e6966",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Prcd1zBvc5iWX1Z7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        224
+      ],
+      "id": "266421a7-4086-477f-9808-bedee828f3a5",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1vE3KtYztokNee6P7-Y2aD7WoorIwZKlVb8Ut449yRIY",
+          "mode": "list",
+          "cachedResultName": "n8n 1 Pelatihan/Kursus",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vE3KtYztokNee6P7-Y2aD7WoorIwZKlVb8Ut449yRIY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vE3KtYztokNee6P7-Y2aD7WoorIwZKlVb8Ut449yRIY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        224
+      ],
+      "id": "bbb30abf-687c-48df-980e-7ed29c87bd2e",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d8YRx5JvZDobB43i",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "30ae9114-f1a7-44bd-badf-7bc24b2fa065",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "03f74ed8a45beecba86a08e11b50eac8929a00d81a4ce250ccf195a1ea5432cf"
+  },
+  "id": "JNuk3gI5WHLnwGQE",
+  "tags": []
+}
