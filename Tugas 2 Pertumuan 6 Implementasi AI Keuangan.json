@@ -1,0 +1,276 @@
+{
+  "name": "Tugas 2 Pertumuan 6 Implementasi AI Keuangan",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -336,
+        -160
+      ],
+      "id": "cf8527a5-347a-4e78-8b87-5ad602a7be2a",
+      "name": "Setiap Minggu Pagi"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ybzXWcud34PDHbGRZ7gUuVoBq2M61trWvMHdwKoZwSE",
+          "mode": "list",
+          "cachedResultName": "Data Dummy Catatan Keuangan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ybzXWcud34PDHbGRZ7gUuVoBq2M61trWvMHdwKoZwSE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ybzXWcud34PDHbGRZ7gUuVoBq2M61trWvMHdwKoZwSE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        -160
+      ],
+      "id": "942ac5a9-aeb1-4be9-9cff-f717008fd2d3",
+      "name": "Mengambil Data Mentah",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d8YRx5JvZDobB43i",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst today = new Date();\ntoday.setHours(23, 59, 59, 999); // inklusif hari ini sampai akhir hari\n\nconst sevenDaysAgo = new Date();\nsevenDaysAgo.setDate(today.getDate() - 7);\nsevenDaysAgo.setHours(0, 0, 0, 0);\n\nlet weeklyExpenses = [];\nlet formattedString = \"Data pengeluaran saya minggu ini:\\n\";\nlet hasExpenses = false;\n\nfor (const item of items) {\n  const rawTanggal = item.json.Tanggal; // format: \"13/04/2026\"\n  \n  // Parse manual DD/MM/YYYY → YYYY-MM-DD agar valid di semua engine\n  const [day, month, year] = rawTanggal.split(\"/\");\n  const expenseDate = new Date(`${year}-${month}-${day}`);\n\n  if (expenseDate >= sevenDaysAgo && expenseDate <= today) {\n    weeklyExpenses.push(item.json);\n    formattedString += `- ${item.json.Deskripsi}: Rp${item.json[\"Jumlah (IDR)\"]}\\n`;\n    hasExpenses = true;\n  }\n}\n\nreturn [{\n  json: {\n    promptData: formattedString,\n    hasExpenses: hasExpenses\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -160
+      ],
+      "id": "b57b4824-688c-415b-a3bf-939db5045950",
+      "name": "Filter 7 Hari & Format Teks"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dcb38dd6-1b36-4698-a7c1-66d4922b8d78",
+              "leftValue": "={{ $node[\"Filter 7 Hari & Format Teks\"].json.hasExpenses }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        -160
+      ],
+      "id": "4877e7fe-a25e-4bb0-9656-9ad7f961c8a9",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "model": "xiaomi/mimo-v2-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -416
+      ],
+      "id": "f8505430-940a-4d82-9bcd-ba9537f7b448",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "hfeJimddPuOo9VVr",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $node[\"Filter 7 Hari & Format Teks\"].json.promptData }} (Notes: sesuaikan dengan nama nodes kalian).\n\n---\nInstruksi: \"Tulis ringkasan kebiasaan belanja saya minggu ini dan beri 1 saran penghematan.\"\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        352,
+        -256
+      ],
+      "id": "abd56f58-b0ab-4026-b67b-1c08c65e21e2",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "chatId": "5598754098",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        352,
+        -96
+      ],
+      "id": "f20a902b-97ae-4b89-8636-36286f04881b",
+      "name": "pesan false",
+      "webhookId": "89c7995d-03de-400e-bb43-906c0c73f697",
+      "credentials": {
+        "telegramApi": {
+          "id": "HSsNpEF3WMMFfKAr",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5598754098",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        -256
+      ],
+      "id": "4270d080-9417-49b7-b282-281d93527a67",
+      "name": "pesan true",
+      "webhookId": "1ba2ae97-1689-4790-a7ca-2e171b902f8b",
+      "credentials": {
+        "telegramApi": {
+          "id": "HSsNpEF3WMMFfKAr",
+          "name": "Telegram account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Setiap Minggu Pagi": {
+      "main": [
+        [
+          {
+            "node": "Mengambil Data Mentah",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mengambil Data Mentah": {
+      "main": [
+        [
+          {
+            "node": "Filter 7 Hari & Format Teks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter 7 Hari & Format Teks": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "pesan false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "pesan true",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7fcfd451-03d5-44a1-a353-a8622b94f144",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "03f74ed8a45beecba86a08e11b50eac8929a00d81a4ce250ccf195a1ea5432cf"
+  },
+  "id": "Y73CRXL2v47WsZGt",
+  "tags": []
+}
